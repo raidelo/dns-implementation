@@ -1,32 +1,36 @@
 from cli import parse_args
 from comms import send_query
-from low import ResponseParser
+from low.parse import DNSMessage
 from parsing import parse_server_string
 
+ERR = "\x1b[1;32merror:\x1b[0m"
 
-def main():
+
+def main() -> int:
     args = parse_args()
 
-    s = parse_server_string(args.server)
-
-    if not s["status"]:
-        print("error: {}".format(s["server"] or s["port"]))
-        exit(1)
+    try:
+        upstream_server = parse_server_string(args.server)
+    except ValueError as e:
+        print(f"{ERR} {e.args[0]}")
+        return 1
 
     recursive = not args.non_recursive
 
-    response = send_query(
-        (s["server"], s["port"]),
-        args.domains,
-        args.qtype,
-        args.qclass,
-        recursive,
+    resp = send_query(
+        server=upstream_server,
+        domains=args.domains,
+        qtype=args.qtype,
+        qclass=args.qclass,
+        recursive=recursive,
     )
 
-    print("Received:", response)
+    parsed = DNSMessage.from_raw_bytes(resp)
 
-    response_parsed = ResponseParser(response)
+    __import__("pprint").pprint(parsed)
+
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    exit(main())

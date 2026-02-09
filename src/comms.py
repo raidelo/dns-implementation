@@ -1,27 +1,34 @@
 import socket
+from typing import Optional
 
-from low import create_request
+from low.create import create_request
+from types_ import UpstreamServer
 
 
 CHUNK = 65536
 TIMEOUT = 3
 
 
-def send_request(request: bytes, server: tuple[str, int]) -> bytes:
+def send_request(
+    request: bytes,
+    server: UpstreamServer,
+    timeout: Optional[int] = None,
+) -> bytes:
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    sock.settimeout(TIMEOUT)
+    sock.settimeout(timeout or TIMEOUT)
 
-    sock.sendto(request, server)
+    sock.sendto(request, (server.address, server.port))
 
     return sock.recv(CHUNK)
 
 
 def send_query(
-    server: tuple[str, int],
+    server: UpstreamServer,
     domains: list[str],
     qtype: str = "A",
     qclass: str = "IN",
     recursive: bool = True,
+    timeout: Optional[int] = None,
 ) -> bytes:
     req = create_request(domains, qtype, qclass, recursive)
-    return send_request(req, server)
+    return send_request(req, server, timeout)

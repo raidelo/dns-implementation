@@ -1,5 +1,6 @@
 import re
 
+from types_ import UpstreamServer
 
 SERVER_ADDRESS = re.compile(
     r"^((\d{1,2}|1\d{2}|2[0-5]{2})\.){3}(\d{1,2}|1\d{2}|2[0-5]{2})$"
@@ -9,29 +10,22 @@ SERVER_PORT = re.compile(r"^(\d|[1-9]\d{1,3}|[1-5]\d{4}|6[1-5]{2}[1-3][1-5])$")
 DEFAULT_REMOTE_PORT = 53
 
 
-def parse_server_string(address: str) -> dict:
+def parse_server_string(address: str) -> UpstreamServer:
     address, _, port = address.partition(":")
-    default = {"status": False, "server": None, "port": None}
 
-    server_match = SERVER_ADDRESS.match(address)
-
-    if not server_match:
-        default["server"] = f"Invalid IPv4 format: {address}"
-        return default
+    address_match = SERVER_ADDRESS.match(address)
+    if not address_match:
+        raise ValueError(f"Invalid IPv4 format: {address}")
     else:
-        default["server"] = server_match.group()
+        naddress = address_match.group()
 
     if port:
         port_match = SERVER_PORT.match(port)
         if not port_match:
-            default["server"] = None
-            default["port"] = f"Invalid port: {port}"
-            return default
+            raise ValueError(f"Invalid port: {port}")
         else:
-            default["port"] = int(port_match.group())
+            nport = int(port_match.group())
     else:
-        default["port"] = DEFAULT_REMOTE_PORT
+        nport = DEFAULT_REMOTE_PORT
 
-    default["status"] = True
-
-    return default
+    return UpstreamServer(naddress, nport)

@@ -1,7 +1,7 @@
-from argparse import ArgumentParser
+from argparse import ArgumentParser, Namespace
 
 
-def parse_args():
+def parse_args() -> Namespace:
     parser = ArgumentParser()
     parser.add_argument("domains", nargs="+")
     parser.add_argument("-s", "--server", default="8.8.8.8:53", dest="server")
