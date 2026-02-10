@@ -7,7 +7,7 @@ type Ptr = int
 
 @dataclass
 class DNSHeader:
-    ID: int  # 1 byte
+    ID: int  # 2 byte
     QR: int  # 1 bit
     OPCODE: int  # 4 bit
     AA: int  # 1 bit
@@ -24,7 +24,7 @@ class DNSHeader:
 
 @dataclass
 class DNSQuestion:
-    QNAME: bytes  # 2 bytes
+    QNAME: bytes  # variable bytes
     QTYPE: bytes  # 2 bytes
     QCLASS: bytes  # 2 bytes
 
