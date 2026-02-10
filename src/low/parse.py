@@ -21,12 +21,34 @@ class DNSHeader:
     NSCOUNT: int  # 2 bytes
     ARCOUNT: int  # 2 bytes
 
+    def to_bytes(self) -> bytes:
+        return (
+            self.ID.to_bytes(2)
+            + (
+                self.QR << 15
+                | self.OPCODE << 11
+                | self.AA << 10
+                | self.TC << 9
+                | self.RD << 8
+                | self.RA << 7
+                | self.Z << 4
+                | self.RCODE
+            ).to_bytes(2)
+            + self.QDCOUNT.to_bytes(2)
+            + self.ANCOUNT.to_bytes(2)
+            + self.NSCOUNT.to_bytes(2)
+            + self.ARCOUNT.to_bytes(2)
+        )
+
 
 @dataclass
 class DNSQuestion:
     QNAME: bytes  # variable bytes
     QTYPE: bytes  # 2 bytes
     QCLASS: bytes  # 2 bytes
+
+    def to_bytes(self) -> bytes:
+        return self.QNAME + self.QTYPE + self.QCLASS
 
 
 @dataclass
@@ -37,6 +59,11 @@ class DNSResourceRecord:
     TTL: bytes  # 4 bytes
     RDLENGTH: bytes  # 2 bytes
     RDATA: bytes  # variable bytes
+
+    def to_bytes(self) -> bytes:
+        return (
+            self.NAME + self.TYPE + self.CLASS + self.TTL + self.RDLENGTH + self.RDATA
+        )
 
 
 @dataclass
@@ -56,6 +83,15 @@ class DNSMessage:
             Answer=parsed.answer_section,
             Authority=parsed.authority_section,
             Additional=parsed.additional_section,
+        )
+
+    def to_bytes(self) -> bytes:
+        return (
+            self.Header.to_bytes()
+            + b"".join([r.to_bytes() for r in self.Question])
+            + b"".join([r.to_bytes() for r in self.Answer])
+            + b"".join([r.to_bytes() for r in self.Authority])
+            + b"".join([r.to_bytes() for r in self.Additional])
         )
 
 

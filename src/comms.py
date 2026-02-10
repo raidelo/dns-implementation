@@ -2,6 +2,7 @@ import socket
 from typing import Optional
 
 from low.create import create_request
+from low.parse import DNSMessage
 from types_ import UpstreamServer
 
 CHUNK = 65536
@@ -31,3 +32,15 @@ def send_query(
 ) -> bytes:
     req = create_request(domains, qtype, qclass, recursive)
     return send_request(req, server, timeout)
+
+
+def send_message(
+    message: DNSMessage,
+    server: UpstreamServer,
+    timeout: Optional[int] = None,
+) -> bytes:
+    return send_request(
+        message.to_bytes(),
+        server,
+        timeout,
+    )
