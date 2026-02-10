@@ -4,7 +4,6 @@ from typing import Optional
 from low.create import create_request
 from types_ import UpstreamServer
 
-
 CHUNK = 65536
 TIMEOUT = 3
 

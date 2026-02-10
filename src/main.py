@@ -1,7 +1,7 @@
 from cli import argument_parser
 from comms import send_query
 from low.parse import DNSMessage
-from parsing import parse_server_string
+from utils import parse_server_string
 
 ERR = "\x1b[1;32merror:\x1b[0m"
 

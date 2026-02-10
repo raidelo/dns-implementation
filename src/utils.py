@@ -1,12 +1,26 @@
-def get_bits(integer: int, left_padding: int | None = None) -> str:
-    bits = bin(integer).replace("0b", "")
-    if left_padding:
-        return bits.zfill(left_padding)
-    left_padding = 8
-    while True:
-        if len(bits) == left_padding:
-            return bits
-        elif len(bits) < left_padding:
-            return bits.zfill(left_padding)
-        else:
-            left_padding += 8
+from ipaddress import AddressValueError, IPv4Address
+
+from types_ import UpstreamServer
+
+DEFAULT_REMOTE_PORT = 53
+
+
+def parse_server_string(address: str) -> UpstreamServer:
+    address, port = address.split(":", 1)
+
+    try:
+        naddress = IPv4Address(address)
+    except AddressValueError:
+        raise ValueError(f"Invalid IPv4 format: {address}")
+
+    if port:
+        try:
+            nport = int(port)
+            if nport <= 0 or nport > 65535:
+                raise ValueError()
+        except ValueError:
+            raise ValueError(f"Invalid port: {port}")
+    else:
+        nport = DEFAULT_REMOTE_PORT
+
+    return UpstreamServer(naddress, nport)
