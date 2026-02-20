@@ -1,5 +1,7 @@
 from random import randint
 
+from low.parse import DNSHeader, DNSMessage, DNSQuestion
+
 from .constants import QCLASS_MAPPING, QTYPE_MAPPING
 
 
@@ -34,28 +36,6 @@ def _create_query(domain: bytes, qtype: bytes, qclass: bytes) -> bytes:
     return b"".join([domain, qtype, qclass])
 
 
-def create_request(
-    domains: list[str],
-    qtype: str = "A",
-    qclass: str = "IN",
-    recursive: bool = True,
-) -> bytes:
-    ret = _create_header(domains, recursive)
-    for domain in domains:
-        query = _create_query(
-            _get_domain_encoded(domain),
-            _get_qtype_encoded(qtype),
-            _get_qclass_encoded(qclass),
-        )
-        ret += query
-    request_len = len(ret)
-    if request_len > 512:
-        raise OverflowError(
-            f"Invalid request length of {request_len} bytes. Maximum length is 512 bytes."
-        )
-    return ret
-
-
 def _get_domain_encoded(domain: str) -> bytes:
     ret = b""
     for sub_domain in domain.split("."):
@@ -86,3 +66,58 @@ def _get_qclass_encoded(qclass: str) -> bytes:
         return QCLASS_MAPPING[qclass].to_bytes(2)
     except KeyError:
         raise KeyError(f"Invalid QCLASS: {qclass}")
+
+
+def create_request(
+    domains: list[str],
+    qtype: str = "A",
+    qclass: str = "IN",
+    recursive: bool = True,
+) -> bytes:
+    ret = _create_header(domains, recursive)
+    for domain in domains:
+        query = _create_query(
+            _get_domain_encoded(domain),
+            _get_qtype_encoded(qtype),
+            _get_qclass_encoded(qclass),
+        )
+        ret += query
+    request_len = len(ret)
+    if request_len > 512:
+        raise OverflowError(
+            f"Invalid request length of {request_len} bytes. Maximum length is 512 bytes."
+        )
+    return ret
+
+
+def make_question(
+    domains: list[str],
+    qtype: str = "A",
+    qclass: str = "IN",
+    recursive: bool = True,
+) -> DNSMessage:
+    h = DNSHeader(
+        ID=randint(0, 2**16 - 1),
+        QR=0,
+        OPCODE=0,
+        AA=0,
+        TC=0,
+        RD=int(recursive),
+        RA=0,
+        Z=0,
+        RCODE=0,
+        QDCOUNT=len(domains),
+        ANCOUNT=0,
+        NSCOUNT=0,
+        ARCOUNT=0,
+    )
+    q = [
+        DNSQuestion(
+            _get_domain_encoded(d),
+            _get_qtype_encoded(qtype),
+            _get_qclass_encoded(qclass),
+        )
+        for d in domains
+    ]
+
+    return DNSMessage(Header=h, Question=q, Answer=[], Authority=[], Additional=[])

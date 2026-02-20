@@ -1,5 +1,6 @@
 from cli import argument_parser
-from comms import send_query
+from comms import send_message
+from low.create import make_question
 from low.parse import DNSMessage
 from utils import parse_server_string
 
@@ -15,12 +16,16 @@ def main() -> int:
         print(f"{ERR} {e.args[0]}")
         return 1
 
-    resp = send_query(
-        server=upstream_server,
+    message = make_question(
         domains=args.domains,
         qtype=args.qtype,
         qclass=args.qclass,
         recursive=args.recursive,
+    )
+
+    resp = send_message(
+        message=message,
+        server=upstream_server,
     )
 
     parsed = DNSMessage.from_raw_bytes(resp)
