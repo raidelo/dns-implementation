@@ -1,4 +1,14 @@
 from argparse import ArgumentParser
+from dataclasses import dataclass
+
+
+@dataclass(frozen=True)
+class CustomNamespace:
+    domains: list[str]
+    server: str
+    qtype: str
+    qclass: str
+    recursive: bool
 
 
 def argument_parser() -> ArgumentParser:
@@ -20,3 +30,8 @@ def argument_parser() -> ArgumentParser:
     )
 
     return parser
+
+
+def parse_args() -> CustomNamespace:
+    args = argument_parser().parse_args()
+    return CustomNamespace(**vars(args))

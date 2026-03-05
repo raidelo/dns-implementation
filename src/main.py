@@ -1,4 +1,4 @@
-from cli import argument_parser
+from cli import parse_args
 from comms import send_message
 from low.create import make_question
 from low.parse import DNSMessage
@@ -8,7 +8,7 @@ ERR = "\x1b[1;32merror:\x1b[0m"
 
 
 def main() -> int:
-    args = argument_parser().parse_args()
+    args = parse_args()
 
     try:
         upstream_server = parse_server_string(args.server)
