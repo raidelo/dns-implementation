@@ -3,7 +3,7 @@ from comms import send_message
 from low.create import make_question
 from low.parse import DNSMessage
 
-ERR = "\x1b[1;32merror:\x1b[0m"
+ERR = "\x1b[1;31merror:\x1b[0m"
 
 
 def main() -> int:
@@ -16,10 +16,14 @@ def main() -> int:
         recursive=args.recursive,
     )
 
-    resp = send_message(
-        message=message,
-        server=args.server,
-    )
+    try:
+        resp = send_message(
+            message=message,
+            server=args.server,
+        )
+    except TimeoutError:
+        print(f"{ERR} Timeout error")
+        return 1
 
     parsed = DNSMessage.from_raw_bytes(resp)
 
