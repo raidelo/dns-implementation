@@ -17,7 +17,7 @@ def send_request(
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sock.settimeout(timeout or TIMEOUT)
 
-    sock.sendto(request, (server.address, server.port))
+    sock.sendto(request, (str(server.address), server.port))
 
     return sock.recv(CHUNK)
 
