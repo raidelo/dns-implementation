@@ -2,19 +2,12 @@ from cli import parse_args
 from comms import send_message
 from low.create import make_question
 from low.parse import DNSMessage
-from utils import parse_server_string
 
 ERR = "\x1b[1;32merror:\x1b[0m"
 
 
 def main() -> int:
     args = parse_args()
-
-    try:
-        upstream_server = parse_server_string(args.server)
-    except ValueError as e:
-        print(f"{ERR} {e.args[0]}")
-        return 1
 
     message = make_question(
         domains=args.domains,
@@ -25,7 +18,7 @@ def main() -> int:
 
     resp = send_message(
         message=message,
-        server=upstream_server,
+        server=args.server,
     )
 
     parsed = DNSMessage.from_raw_bytes(resp)
