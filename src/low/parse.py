@@ -1,21 +1,20 @@
 from dataclasses import dataclass
 from typing import Callable
 
-
 type Ptr = int
 
 
 @dataclass
-class DNSHeader:
-    ID: int  # 2 byte
+class DNSHeader:  # 12 bytes total
+    ID: int  # 2 bytes
     QR: int  # 1 bit
-    OPCODE: int  # 4 bit
+    OPCODE: int  # 4 bits
     AA: int  # 1 bit
     TC: int  # 1 bit
     RD: int  # 1 bit
     RA: int  # 1 bit
-    Z: int  # 3 bit
-    RCODE: int  # 4 bit
+    Z: int  # 3 bits
+    RCODE: int  # 4 bits
     QDCOUNT: int  # 2 bytes
     ANCOUNT: int  # 2 bytes
     NSCOUNT: int  # 2 bytes
@@ -43,7 +42,7 @@ class DNSHeader:
 
 @dataclass
 class DNSQuestion:
-    QNAME: bytes  # variable bytes
+    QNAME: bytes  # variable bytes (2 or more)
     QTYPE: bytes  # 2 bytes
     QCLASS: bytes  # 2 bytes
 
@@ -53,12 +52,12 @@ class DNSQuestion:
 
 @dataclass
 class DNSResourceRecord:
-    NAME: bytes  # variable bytes
+    NAME: bytes  # variable bytes (2 or more)
     TYPE: bytes  # 2 bytes
     CLASS: bytes  # 2 bytes
     TTL: bytes  # 4 bytes
     RDLENGTH: bytes  # 2 bytes
-    RDATA: bytes  # variable bytes
+    RDATA: bytes  # variable bytes (0 or more)
 
     def to_bytes(self) -> bytes:
         return (
@@ -76,7 +75,7 @@ class DNSMessage:
 
     @classmethod
     def from_raw_bytes(cls, data: bytes) -> "DNSMessage":
-        parsed = ResponseParser(data)
+        parsed = RawBytesParser(data)
         return DNSMessage(
             Header=parsed.header,
             Question=parsed.question_section,
@@ -95,11 +94,11 @@ class DNSMessage:
         )
 
 
-class ResponseParser:
+class RawBytesParser:
     def __init__(self, data: bytes):
-        self.response = data
+        self.data = data
 
-        self._raw_headers = self.response[:12]
+        self._raw_headers = self.data[:12]
         self.header: DNSHeader = self._parse_headers(self._raw_headers)
 
         self._ptr = 12
@@ -161,16 +160,16 @@ class ResponseParser:
 
     def _parse_helper[T: DNSQuestion | DNSResourceRecord](
         self,
-        f: Callable[[bytes, Ptr, int], tuple[Ptr, list[T]]],
+        func: Callable[[bytes, Ptr, int], tuple[Ptr, list[T]]],
         count: int,
     ) -> tuple[bytes, list[T]]:
-        end_ptr, records = f(
-            self.response,
+        end_ptr, records = func(
+            self.data,
             self._ptr,
             count,
         )
 
-        raw_section = self.response[self._ptr : end_ptr]
+        raw_section = self.data[self._ptr : end_ptr]
 
         self._ptr = end_ptr
 

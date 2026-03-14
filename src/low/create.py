@@ -1,17 +1,20 @@
 from random import randint
 
+from typing_extensions import deprecated
+
 from low.parse import DNSHeader, DNSMessage, DNSQuestion
 
 from .constants import QCLASS_MAPPING, QTYPE_MAPPING
 
 
+@deprecated("use make_question instead")
 def _create_header(domains: list[str], recursive: bool = True) -> bytes:
     id = randint(0, 2**16 - 1).to_bytes(2)  # ID
     qr_opcode_aa_tc_rd_ra_z_rcode = int(
         "".join(
             [
                 "0",  # QR
-                "0000",  # Opcode
+                "0000",  # OPCODE
                 "0",  # AA
                 "0",  # TC
                 str(1 if recursive else 0),  # RD
@@ -28,12 +31,43 @@ def _create_header(domains: list[str], recursive: bool = True) -> bytes:
     arcount = int("0" * 16, 2).to_bytes(2)
 
     return b"".join(
-        [id, qr_opcode_aa_tc_rd_ra_z_rcode, qdcount, ancount, nscount, arcount]
+        [
+            id,
+            qr_opcode_aa_tc_rd_ra_z_rcode,
+            qdcount,
+            ancount,
+            nscount,
+            arcount,
+        ]
     )
 
 
+@deprecated("use make_question instead")
 def _create_query(domain: bytes, qtype: bytes, qclass: bytes) -> bytes:
     return b"".join([domain, qtype, qclass])
+
+
+@deprecated("use make_question instead")
+def create_request(
+    domains: list[str],
+    qtype: str = "A",
+    qclass: str = "IN",
+    recursive: bool = True,
+) -> bytes:
+    ret = _create_header(domains, recursive)
+    for domain in domains:
+        query = _create_query(
+            _get_domain_encoded(domain),
+            _get_qtype_encoded(qtype),
+            _get_qclass_encoded(qclass),
+        )
+        ret += query
+    request_len = len(ret)
+    if request_len > 512:
+        raise OverflowError(
+            f"Invalid request length of {request_len} bytes. Maximum length is 512 bytes."
+        )
+    return ret
 
 
 def _get_domain_encoded(domain: str) -> bytes:
@@ -66,28 +100,6 @@ def _get_qclass_encoded(qclass: str) -> bytes:
         return QCLASS_MAPPING[qclass].to_bytes(2)
     except KeyError:
         raise KeyError(f"Invalid QCLASS: {qclass}")
-
-
-def create_request(
-    domains: list[str],
-    qtype: str = "A",
-    qclass: str = "IN",
-    recursive: bool = True,
-) -> bytes:
-    ret = _create_header(domains, recursive)
-    for domain in domains:
-        query = _create_query(
-            _get_domain_encoded(domain),
-            _get_qtype_encoded(qtype),
-            _get_qclass_encoded(qclass),
-        )
-        ret += query
-    request_len = len(ret)
-    if request_len > 512:
-        raise OverflowError(
-            f"Invalid request length of {request_len} bytes. Maximum length is 512 bytes."
-        )
-    return ret
 
 
 def make_question(

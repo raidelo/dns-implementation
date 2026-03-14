@@ -1,6 +1,8 @@
 import socket
 from typing import Optional
 
+from typing_extensions import deprecated
+
 from low.create import create_request
 from low.parse import DNSMessage
 from types_ import UpstreamServer
@@ -9,7 +11,7 @@ CHUNK = 65536
 TIMEOUT = 3
 
 
-def send_request(
+def _send_bytes(
     request: bytes,
     server: UpstreamServer,
     timeout: Optional[int] = None,
@@ -22,6 +24,7 @@ def send_request(
     return sock.recv(CHUNK)
 
 
+@deprecated("use send_message instead")
 def send_query(
     server: UpstreamServer,
     domains: list[str],
@@ -31,7 +34,7 @@ def send_query(
     timeout: Optional[int] = None,
 ) -> bytes:
     req = create_request(domains, qtype, qclass, recursive)
-    return send_request(req, server, timeout)
+    return _send_bytes(req, server, timeout)
 
 
 def send_message(
@@ -39,7 +42,7 @@ def send_message(
     server: UpstreamServer,
     timeout: Optional[int] = None,
 ) -> bytes:
-    return send_request(
+    return _send_bytes(
         message.to_bytes(),
         server,
         timeout,
